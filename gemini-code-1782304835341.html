@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulasi & Konversi Ketenagakerjaan Pro</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f1f5f9; color: #1e293b; padding: 12px; display: flex; flex-direction: column; gap: 16px; }
+    
+    /* OUTCOME SANDBOX PANEL */
+    .sandbox-panel { background: #0f172a; color: white; padding: 16px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .sandbox-title { border-bottom: 2px solid #1e293b; padding-bottom: 8px; margin-bottom: 12px; text-align: center; }
+    .sandbox-title h3 { font-size: 1.1rem; color: #38bdf8; }
+    .sandbox-title small { color: #94a3b8; }
+    .grid-label { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: 0.75rem; font-weight: bold; margin-bottom: 8px; }
+    .metric-section { margin-bottom: 10px; background: #1e293b; padding: 10px; border-radius: 8px; }
+    .section-title { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; font-weight: bold; }
+    .card-data-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 1.1rem; font-weight: bold; text-align: center; }
+    .val-awal { color: #94a3b8; } .val-sim { color: #38bdf8; }
+
+    /* MAIN PANEL */
+    .main-panel { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 16px; }
+    h2 { font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
+    .desc { font-size: 0.85rem; color: #64748b; margin-top: -8px; }
+    .box-container { background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 8px; }
+    .box-title { font-weight: bold; font-size: 0.9rem; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 6px; }
+    
+    .flex-stack { display: flex; flex-direction: column; gap: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+    label { font-size: 0.75rem; font-weight: 600; color: #475569; text-transform: uppercase; }
+    select, input { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 0.85rem; background: white; }
+    
+    button { background: #2563eb; color: white; border: none; padding: 10px 14px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; }
+    button:hover { background: #1d4ed8; }
+    .btn-secondary { background: #64748b; } .btn-secondary:hover { background: #475569; }
+    .btn-excel { background: #16a34a; margin-bottom: 10px; } .btn-excel:hover { background: #15803d; }
+    .btn-danger { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; width: auto; padding: 8px 10px; }
+
+    .filter-row { display: flex; flex-direction: column; gap: 8px; background: white; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 8px; }
+    .filter-row-top { display: flex; gap: 6px; width: 100%; }
+    
+    /* CAPSULE SELECTION LAYOUT (MODEL FILTER) */
+    .caps-wrapper { display: flex; flex-wrap: wrap; gap: 8px; padding: 5px 0; }
+    .cap-item { background: #e2e8f0; color: #475569; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; transition: all 0.2s; user-select: none; }
+    .cap-item.active { background: #3b82f6; color: white; border-color: #2563eb; }
+    .max-alert { font-size: 0.75rem; color: #ea580c; font-weight: bold; margin-top: 4px; }
+
+    /* TABLE RESPONSIVE WRAPPER */
+    .table-wrapper { width: 100%; overflow-x: auto; margin-top: 5px; border: 1px solid #e2e8f0; border-radius: 8px; }
+    table { width: 100%; border-collapse: collapse; min-width: 500px; background: white; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 0.8rem; white-space: nowrap; }
+    th { background-color: #f1f5f9; color: #475569; font-weight: 600; }
+    
+    .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; }
+    .badge.ubah { background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; }
+    .loading-text { text-align: center; padding: 20px; color: #64748b; font-style: italic; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+  <div class="sandbox-panel">
+    <div class="sandbox-title">
+      <h3><i class="fa-solid fa-chart-pie"></i> OUTCOME SANDBOX</h3>
+      <small>Dampak Makro Terkini</small>
+    </div>
+    
+    <div class="grid-label">
+      <div style="color:#94a3b8">DATA AWAL</div>
+      <div style="color:#38bdf8">SETELAH SIMULASI</div>
+    </div>
+
+    <div class="metric-section">
+      <div class="section-title">Total Penganggur</div>
+      <div class="card-data-row"><div class="val-awal" id="v-awal-p">0</div><div class="val-sim" id="v-sim-p">0</div></div>
+    </div>
+    <div class="metric-section" style="border-left:4px solid #f87171">
+      <div class="section-title">Tingkat Pengangguran Terbuka (TPT)</div>
+      <div class="card-data-row"><div class="val-awal" id="v-awal-tpt">0%</div><div class="val-sim" id="v-sim-tpt" style="color:#f87171">0%</div></div>
+    </div>
+    <div class="metric-section" style="border-left:4px solid #4ade80">
+      <div class="section-title">Tingkat Partisipasi Angkatan Kerja (TPAK)</div>
+      <div class="card-data-row"><div class="val-awal" id="v-awal-tpak">0%</div><div class="val-sim" id="v-sim-tpak" style="color:#4ade80">0%</div></div>
+    </div>
+  </div>
+
+  <div class="main-panel">
+    <h2><i class="fa-solid fa-sliders"></i> Simulator Variabel Ketenagakerjaan</h2>
+    <p class="desc">Gunakan opsi filter di bawah ini untuk mengelola data dan mengekspor hasilnya langsung ke file Excel.</p>
+
+    <div class="box-container">
+      <div class="box-title"><i class="fa-solid fa-filter"></i> 1. Penyaringan Data (Multi-Filter)</div>
+      <div id="filter-container-list"></div>
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <button class="btn-secondary" onclick="tambahBarisFilterBaru()"><i class="fa-solid fa-plus"></i> Tambah Kriteria</button>
+        <button onclick="eksekusiKombinasi()"><i class="fa-solid fa-filter"></i> Terapkan Filter</button>
+      </div>
+    </div>
+
+    <div class="box-container">
+      <div class="box-title"><i class="fa-solid fa-bolt"></i> 2. Konversi Massal (Ubah Kode)</div>
+      <div class="flex-stack">
+        <div class="form-group">
+          <label>Pilih Variabel Sasaran</label>
+          <select id="select-variable-target"></select>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <div class="form-group">
+            <label>Kode Sekarang</label>
+            <input type="text" id="input-kode-sekarang" placeholder="Misal: 3">
+          </div>
+          <div class="form-group">
+            <label>Kode Perubahan</label>
+            <input type="text" id="input-kode-perubahan" placeholder="Misal: 1">
+          </div>
+        </div>
+        <button onclick="jalankanProsesMassUpdate()"><i class="fa-solid fa-rotate"></i> Jalankan Konversi Massal</button>
+      </div>
+    </div>
+
+    <div class="box-container">
+      <div class="box-title"><i class="fa-solid fa-eye"></i> 3. Pilih Kolom Tampilan Variabel (Maksimal 8)</div>
+      <div class="caps-wrapper" id="caps-display-container"></div>
+      <div class="max-alert" id="max-selection-warning" style="display:none;"><i class="fa-solid fa-triangle-exclamation"></i> Batas maksimal 8 variabel terpilih sudah tercapai!</div>
+    </div>
+
+    <div>
+      <div class="box-title" style="border:none; margin-bottom:5px;"><i class="fa-solid fa-database"></i> Lembar Hasil Record Responden</div>
+      
+      <button class="btn-excel" onclick="downloadKeExcel()"><i class="fa-solid fa-file-excel"></i> Unduh File Hasil (.xls)</button>
+      
+      <div id="loading-indicator" class="loading-text"><i class="fa-solid fa-spinner fa-spin"></i> Menghubungkan ke API Google Sheet...</div>
+      
+      <div class="table-wrapper">
+        <table id="tabel-container" style="display:none;">
+          <thead id="tabel-head-view"></thead>
+          <tbody id="tabel-body-view"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // =========================================================================
+    // TEMPELKAN URL WEB APP GOOGLE APPS SCRIPT BARU KAMU DI SINI:
+    const API_URL = "https://script.google.com/macros/s/XXXXX/exec"; 
+    // =========================================================================
+
+    let datasetWarga = [];
+    let masterHeaders = [];
+    let listKolomTerpilih = ['nama', 'statusKerjaAwal']; 
+    let filterAktifUser = [];
+    let variabelsKapsulTerpilih = ['dem_sex_value', 'dem_age_value']; // Default awal yang terpilih
+
+    function muatDataAwal() {
+      fetch(API_URL)
+        .then(res => res.json())
+        .then(response => {
+          if (response.error) { alert("API Error: " + response.error); return; }
+          
+          datasetWarga = response.warga;
+          masterHeaders = response.headers;
+          
+          // Dropdown Variabel Mass Update
+          const selectVar = document.getElementById('select-variable-target');
+          selectVar.innerHTML = `<option value="">-- Pilih Variabel --</option>`;
+          masterHeaders.forEach(h => { selectVar.innerHTML += `<option value="${h}">${h}</option>`; });
+
+          // Render Model Kapsul Pilihan Variabel
+          buildCapsuleSelectors();
+
+          document.getElementById('loading-indicator').style.display = 'none';
+          document.getElementById('tabel-container').style.display = 'table';
+          
+          tambahBarisFilterBaru();
+          updateKolomTampilan(); 
+          hitungUlangIndikatorMakro();
+        })
+        .catch(err => {
+          document.getElementById('loading-indicator').innerHTML = "<span style='color:#ef4444;'>Gagal memuat API Google Sheet.</span>";
+        });
+    }
+
+    function buildCapsuleSelectors() {
+      const container = document.getElementById('caps-display-container');
+      container.innerHTML = "";
+      masterHeaders.forEach(h => {
+        let isActive = variabelsKapsulTerpilih.includes(h);
+        container.innerHTML += `
+          <div class="cap-item ${isActive ? 'active' : ''}" onclick="toggleKapsulVariabel('${h}', this)">
+            <i class="fa-solid ${isActive ? 'fa-circle-check' : 'fa-circle-plus'}"></i> ${h}
+          </div>
+        `;
+      });
+    }
+
+    function toggleKapsulVariabel(headerName, element) {
+      let idx = variabelsKapsulTerpilih.indexOf(headerName);
+      if (idx > -1) {
+        // Hapus seleksi jika sudah aktif
+        variabelsKapsulTerpilih.splice(idx, 1);
+        element.classList.remove('active');
+        element.querySelector('i').className = "fa-solid fa-circle-plus";
+        document.getElementById('max-selection-warning').style.display = 'none';
+      } else {
+        // Tambahkan jika belum melewati batas maksimal 8 variabel tambahan
+        if (variabelsKapsulTerpilih.length >= 8) {
+          document.getElementById('max-selection-warning').style.display = 'block';
+          return;
+        }
+        variabelsKapsulTerpilih.push(headerName);
+        element.classList.add('active');
+        element.querySelector('i').className = "fa-solid fa-circle-check";
+      }
+      updateKolomTampilan();
+    }
+
+    function updateKolomTampilan() {
+      listKolomTerpilih = ['nama', 'statusKerjaAwal'];
+      variabelsKapsulTerpilih.forEach(v => {
+        listKolomTerpilih.push(v);
+      });
+      listKolomTerpilih.push('statusKerjaSim');
+      renderUlangTabelSesuaiKondisi();
+    }
+
+    function tambahBarisFilterBaru() {
+      const container = document.getElementById('filter-container-list');
+      const divRow = document.createElement('div');
+      divRow.className = 'filter-row';
+
+      let selectCol = document.createElement('select');
+      selectCol.className = 'col-select';
+      selectCol.innerHTML = `<option value="ALL">-- Pilih Variabel --</option>`;
+      masterHeaders.forEach(h => { selectCol.innerHTML += `<option value="${h}">${h}</option>`; });
+
+      let selectOp = document.createElement('select');
+      selectOp.innerHTML = `
+        <option value="=">=</option>
+        <option value="<">&lt;</option>
+        <option value=">">&gt;</option>
+        <option value="LIKE">Text</option>
+      `;
+
+      let inputVal = document.createElement('input');
+      inputVal.type = 'text';
+      inputVal.placeholder = 'Nilai...';
+
+      let btnRemove = document.createElement('button');
+      btnRemove.className = 'btn-danger';
+      btnRemove.innerHTML = '<i class="fa-solid fa-trash"></i>';
+      btnRemove.onclick = function() { divRow.remove(); };
+
+      let divTop = document.createElement('div');
+      divTop.className = 'filter-row-top';
+      divTop.appendChild(selectCol);
+      divTop.appendChild(selectOp);
+
+      divRow.appendChild(divTop);
+      divRow.appendChild(inputVal);
+      divRow.appendChild(btnRemove);
+      container.appendChild(divRow);
+    }
+
+    function eksekusiKombinasi() {
+      filterAktifUser = [];
+      document.querySelectorAll('#filter-container-list .filter-row').forEach(row => {
+        let col = row.querySelector('.col-select').value;
+        let op = row.querySelectorAll('select')[1].value;
+        let val = row.querySelector('input').value;
+        if (col !== 'ALL' && val.trim() !== "") {
+          filterAktifUser.push({ col, op, val });
+        }
+      });
+      renderUlangTabelSesuaiKondisi();
+    }
+
+    function jalankanProsesMassUpdate() {
+      const varTarget = document.getElementById('select-variable-target').value;
+      const kodeSekarang = document.getElementById('input-kode-sekarang').value.trim().toLowerCase();
+      const kodePerubahan = document.getElementById('input-kode-perubahan').value.trim();
+
+      if (!varTarget || kodeSekarang === "" || kodePerubahan === "") {
+        alert("Mohon lengkapi parameter konversi massal!");
+        return;
+      }
+
+      datasetWarga.forEach(w => {
+        let nilaiAsli = String(w.fields[varTarget]).toLowerCase().trim();
+        if (nilaiAsli === kodeSekarang) {
+          w.fields[varTarget] = kodePerubahan;
+
+          let kbli = w.fields['mjj_kbli_value'];
+          let srhKerja = String(w.fields['srh_kerja_value']);
+          let srhUsaha = String(w.fields['srh_usaha_value']);
+          let srhAlsn = Number(w.fields['srh_alsn_value']);
+
+          let bekerja = (kbli !== '' && kbli !== null && kbli !== undefined) ? 1 : 2;
+          let penganggur = (srhKerja === '1' || srhUsaha === '1' || (srhKerja === '2' && srhUsaha === '2' && !isNaN(srhAlsn) && srhAlsn <= 3)) ? 1 : 2;
+
+          w.statusKerjaSim = bekerja === 1 ? "Bekerja" : (penganggur === 1 ? "Menganggur" : "Bukan Angkatan Kerja");
+        }
+      });
+
+      renderUlangTabelSesuaiKondisi();
+      hitungUlangIndikatorMakro();
+      alert("Konversi Massal Berhasil!");
+    }
+
+    function evaluasiFilterItem(nilaiData, operator, nilaiFilter) {
+      if (nilaiFilter.trim() === "") return true;
+      if (nilaiData === null || nilaiData === undefined) return false;
+      let dStr = String(nilaiData).toLowerCase().trim();
+      let fStr = String(nilaiFilter).toLowerCase().trim();
+      if (operator === 'LIKE') return dStr.includes(fStr);
+      let dNum = Number(nilaiData); let fNum = Number(nilaiFilter);
+      if (!isNaN(dNum) && !isNaN(fNum)) {
+        if (operator === '=') return dNum === fNum;
+        if (operator === '<') return dNum < fNum;
+        if (operator === '>') return dNum > fNum;
+      } else {
+        if (operator === '=') return dStr === fStr;
+        if (operator === '<') return dStr < fStr;
+        if (operator === '>') return dStr > fStr;
+      }
+      return true;
+    }
+
+    function renderUlangTabelSesuaiKondisi() {
+      const thead = document.getElementById('tabel-head-view');
+      const tbody = document.getElementById('tabel-body-view');
+      thead.innerHTML = ""; tbody.innerHTML = "";
+
+      let trHead = document.createElement('tr');
+      listKolomTerpilih.forEach(k => {
+        let th = document.createElement('th');
+        th.innerText = k === 'nama' ? 'Nama' : (k === 'statusKerjaAwal' ? 'Status Awal' : (k === 'statusKerjaSim' ? 'Status Baru' : k));
+        trHead.appendChild(th);
+      });
+      thead.appendChild(trHead);
+
+      let dataTersaring = datasetWarga.filter(w => {
+        for (let kret of filterAktifUser) {
+          if (!evaluasiFilterItem(w.fields[kret.col], kret.op, kret.val)) return false;
+        }
+        return true;
+      });
+
+      if (dataTersaring.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${listKolomTerpilih.length}" style="text-align:center; color:#94a3b8; padding:20px;">Tidak ada record cocok.</td></tr>`;
+        return;
+      }
+
+      dataTersaring.forEach(w => {
+        let tr = document.createElement('tr');
+        listKolomTerpilih.forEach(k => {
+          let td = document.createElement('td');
+          if (k === 'nama' || k === 'statusKerjaAwal' || k === 'statusKerjaSim') {
+            td.innerHTML = k === 'statusKerjaSim' && w.statusKerjaAwal !== w.statusKerjaSim ? `<span class="badge ubah">${w[k]}</span>` : w[k];
+          } else {
+            td.innerText = w.fields[k] !== undefined ? w.fields[k] : "-";
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    function hitungUlangIndikatorMakro() {
+      let awal = { b: 0, p: 0, bak: 0 }, sim = { b: 0, p: 0, bak: 0 };
+      datasetWarga.forEach(w => {
+        if (w.statusKerjaAwal === 'Bekerja') awal.b++; else if (w.statusKerjaAwal === 'Menganggur') awal.p++; else awal.bak++;
+        if (w.statusKerjaSim === 'Bekerja') sim.b++; else if (w.statusKerjaSim === 'Menganggur') sim.p++; else sim.bak++;
+      });
+      function hitungRasio(obj, prefix) {
+        let ak = obj.b + obj.p; let tot = ak + obj.bak;
+        let tpt = ak > 0 ? ((obj.p / ak) * 100).toFixed(2) : "0.00";
+        let tpak = tot > 0 ? ((ak / tot) * 100).toFixed(2) : "0.00";
+        document.getElementById(`v-${prefix}-p`).innerText = obj.p + " org";
+        document.getElementById(`v-${prefix}-tpt`).innerText = tpt + "%";
+        document.getElementById(`v-${prefix}-tpak`).innerText = tpak + "%";
+      }
+      hitungRasio(awal, 'awal'); hitungRasio(sim, 'sim');
+    }
+
+    // FUNGSI UTAMA DOWNLOAD EXCEL COMPATIBLE DATA
+    function downloadKeExcel() {
+      let table = document.getElementById("tabel-container");
+      let html = table.outerHTML;
+
+      // Konversi format agar bisa dibaca Excel sebagai lembar kerja spreadsheet asli (.xls)
+      let url = 'data:application/vnd.ms-excel;charset=utf-8,' + encodeURIComponent(html);
+      let downloadLink = document.createElement("a");
+      
+      document.body.appendChild(downloadLink);
+      downloadLink.href = url;
+      downloadLink.download = 'Hasil_Simulasi_Ketenagakerjaan.xls';
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    }
+
+    window.onload = muatDataAwal;
+  </script>
+</body>
+</html>
